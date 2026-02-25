@@ -1,0 +1,10 @@
+- Run Program.CS as is - you will have 3 threads try to increment the global variable globalCounter. 
+    - Each will try to add 1_000_000
+    - You would expect 3*1_000_000 would be 3_000_000
+    - unfortuantely, you likely did not get that outcome  
+    - (If you did, increase from 1_000_000 to 10_000_000 or to 100_000_000 and you WILL see the error)
+    - TURN IN a copy of the error output (not equalling 3_000_000)
+- Change the code so you still have 3 threads running at the same time, but you don't get an error:
+    - METHOD 1:  LOCK an object
+    - METHOD 2:  use an atomic operation like "addi"
+        - C# Interlocked class for your int
