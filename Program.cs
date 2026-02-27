@@ -9,6 +9,7 @@ class Program
     static System.Collections.Concurrent.ConcurrentQueue<string> cq = new();
     static System.Collections.Concurrent.ConcurrentStack<string> cs = new();
     static System.Collections.Concurrent.ConcurrentBag<string> cb = new();
+    static ulong[] localCounters = Array.Empty<ulong>();
 
     static void Main(string[] args)
     {
@@ -32,12 +33,25 @@ class Program
         ParallelInvokeLCounter(500_000);
 
         //concurrent datatype
+
         TowelSimulationFIFO(10);
         TowelSimulationLIFO(10);
 
         //FUTURE:
         //Cancelation Tokens
         //Semaphore / manual reset events
+
+        ApproxCounterDemo(500_000, 1);
+        ApproxCounterDemo(500_000, 10);
+        ApproxCounterDemo(500_000, 100);
+        ApproxCounterDemo(500_000, 1_000);
+        ApproxCounterDemo(500_000, 10_000);
+
+        ApproxCounterDemo(1_000_000, 100);
+
+
+
+        
 
     }
     static void TowelSimulationLIFO(ulong makeTo)
@@ -388,4 +402,50 @@ class Program
             }
         }
     }
+
+    static void ApproxCounterDemo(ulong countTo, ulong S)
+{
+    globalCounter = 0;
+    localCounters = new ulong[3];
+
+    var th1 = new Thread(() => ApproxCounter(countTo, S, 0));
+    var th2 = new Thread(() => ApproxCounter(countTo, S, 1));
+    var th3 = new Thread(() => ApproxCounter(countTo, S, 2));
+
+    th1.Start();
+    th2.Start();
+    th3.Start();
+
+    Console.WriteLine($"\n threads have started local counters to counter up to {countTo} with S={S}.");
+    Stopwatch sw = Stopwatch.StartNew();
+
+    th1.Join();
+    th2.Join();
+    th3.Join();
+
+    Console.WriteLine($"All threads are done counting.  Time: {sw.Elapsed.TotalSeconds}");
+    Console.WriteLine($"Should count up to {countTo * 3}");
+    Console.WriteLine($"Final counter value (global counter):    {globalCounter}");
+}
+
+static void ApproxCounter(ulong countTo, ulong S, int threadIndex)
+{
+    for (ulong i = 0; i < countTo; i++)
+    {
+        localCounters[threadIndex]++;
+        if (localCounters[threadIndex] >= S)
+        {
+            lock(x)
+            {
+                globalCounter += localCounters[threadIndex];
+            }
+            localCounters[threadIndex] = 0;
+        }
+    }
+    lock(x)
+    {
+        globalCounter += localCounters[threadIndex];
+    }
+    localCounters[threadIndex] = 0;
+}
 }
